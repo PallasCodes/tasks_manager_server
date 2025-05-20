@@ -5,3 +5,20 @@ Content-Type: application/json
   "title": "New Task 2",
   "listId": "17223638-3e20-41b2-ae19-afb6c122db55"
 }
+
+###
+GET http://localhost:3000/api/tasks
+
+###
+GET http://localhost:3000/api/tasks/93044811-8f64-4420-9c63-f3140f58c35c
+
+### 
+PATCH http://localhost:3000/api/tasks/93044811-8f64-4420-9c63-f3140f58c35c
+Content-Type: application/json
+
+{
+  "title": "task updated"
+}
+
+###
+DELETE http://localhost:3000/api/tasks/93044811-8f64-4420-9c63-f3140f58c35c
