@@ -1,0 +1,7 @@
+POST http://localhost:3000/api/tasks
+Content-Type: application/json
+
+{
+  "title": "New Task 2",
+  "listId": "17223638-3e20-41b2-ae19-afb6c122db55"
+}
