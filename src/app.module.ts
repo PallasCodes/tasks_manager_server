@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
+import { ListsModule } from './lists/lists.module';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { AuthModule } from './auth/auth.module';
       autoLoadEntities: true,
       synchronize: true
     }),
-    AuthModule
+    AuthModule,
+    ListsModule
   ]
 })
 export class AppModule {}
