@@ -4,3 +4,20 @@ Content-Type: application/json
 {
    "title": "My List"
 }
+
+### 
+GET http://localhost:3000/api/lists
+
+###
+GET http://localhost:3000/api/lists/55efc7f0-938b-4af7-91ae-3552c27ff9
+
+###
+PATCH http://localhost:3000/api/lists/55efc7f0-938b-4af7-91ae-3552c27ff9ab
+Content-Type: application/json
+
+{
+   "title": "My List updated"
+}
+
+###
+DELETE http://localhost:3000/api/lists/55efc7f0-938b-4af7-91ae-3552c27ff9ab

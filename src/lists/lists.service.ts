@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 
 import { Repository } from 'typeorm'
@@ -18,18 +18,26 @@ export class ListsService {
   }
 
   findAll() {
-    return `This action returns all lists`
+    return this.listRepository.find()
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} list`
+  findOne(id: string) {
+    return this.listRepository.findOneByOrFail({ id }).catch(() => {
+      throw new NotFoundException(`List with id ${id} not found`)
+    })
   }
 
-  update(id: number, updateListDto: UpdateListDto) {
-    return `This action updates a #${id} list`
+  async update(id: string, updateListDto: UpdateListDto) {
+    const list = await this.findOne(id)
+
+    this.listRepository.merge(list, updateListDto)
+
+    return this.listRepository.save(list)
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} list`
+  async remove(id: string) {
+    const list = await this.findOne(id)
+
+    return this.listRepository.remove(list)
   }
 }
