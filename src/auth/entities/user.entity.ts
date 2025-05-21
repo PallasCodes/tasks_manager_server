@@ -32,6 +32,10 @@ export class User {
   @Column('text', { array: true, default: ['user'] })
   roles: string[]
 
+  @ApiProperty()
+  @Column('boolean', { default: true })
+  isActive: boolean
+
   @BeforeInsert()
   checkFieldsBeforeInsert() {
     this.email = this.email.toLocaleLowerCase().trim()

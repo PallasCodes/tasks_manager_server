@@ -43,15 +43,24 @@ export class AuthService {
 
     const user = await this.userRepository.findOne({
       where: { email },
-      select: { email: true, password: true, id: true }
+      select: {
+        email: true,
+        password: true,
+        id: true,
+        isActive: true,
+        roles: true,
+        username: true
+      }
     })
 
-    if (!user) throw new UnauthorizedException('Credenciales no válidas')
+    if (!user) throw new UnauthorizedException('Credentials are not valid')
 
     if (!bcrypt.compareSync(password, user.password))
-      throw new UnauthorizedException('Credenciales no válidas')
+      throw new UnauthorizedException('Credentials are not valid')
 
-    return { ...user, token: this.getJwtToken({ id: user.id }) }
+    delete user.password
+
+    return { user, token: this.getJwtToken({ id: user.id }) }
   }
 
   private getJwtToken(payload: JwtPayload) {
