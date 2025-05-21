@@ -4,8 +4,11 @@ import {
   BeforeUpdate,
   Column,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn
 } from 'typeorm'
+
+import { List } from '../../lists/entities/list.entity'
 
 @Entity('users')
 export class User {
@@ -35,6 +38,10 @@ export class User {
   @ApiProperty()
   @Column('boolean', { default: true })
   isActive: boolean
+
+  @ApiProperty()
+  @OneToMany(() => List, (list) => list.user)
+  lists: List[]
 
   @BeforeInsert()
   checkFieldsBeforeInsert() {

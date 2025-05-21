@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 
 import { Repository } from 'typeorm'
 
+import { User } from '../auth/entities/user.entity'
 import { ListsService } from '../lists/lists.service'
 import { CreateTaskDto } from './dto/create-task.dto'
 import { UpdateTaskDto } from './dto/update-task.dto'
@@ -15,9 +16,9 @@ export class TasksService {
     private readonly listsService: ListsService
   ) {}
 
-  async create(createTaskDto: CreateTaskDto) {
+  async create(createTaskDto: CreateTaskDto, user: User) {
     const { listId, ...restCreateTaskDto } = createTaskDto
-    const list = await this.listsService.findOne(listId)
+    const list = await this.listsService.findOne(listId, user)
 
     return this.taskRepository.save({ ...restCreateTaskDto, list })
   }

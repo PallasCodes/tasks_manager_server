@@ -38,6 +38,7 @@ describe('AuthModule Private (e2e)', () => {
 
     userRepository = app.get<Repository<User>>(getRepositoryToken(User))
     listsRepository = app.get<Repository<List>>(getRepositoryToken(List))
+
     await userRepository.delete({ email: testingUser.email })
 
     const responseUser = await request(app.getHttpServer())
@@ -53,41 +54,17 @@ describe('AuthModule Private (e2e)', () => {
   })
 
   it('should return 401 - user is not logged in', async () => {
-    const response = await request(app.getHttpServer()).post('/lists').send({})
+    const response = await request(app.getHttpServer()).get('/lists')
 
     expect(response.status).toBe(401)
   })
 
-  it('should return 400 - title is required', async () => {
+  it('should return all lists created by the logged in user', async () => {
     const response = await request(app.getHttpServer())
-      .post('/lists')
+      .get('/lists')
       .set('Authorization', `Bearer ${token}`)
-      .send({})
 
-    const errorMessages = [
-      'title must be shorter than or equal to 100 characters',
-      'title must be longer than or equal to 1 characters',
-      'title must be a string'
-    ]
-
-    expect(response.status).toBe(400)
-    errorMessages.forEach((message) => {
-      expect(response.body.message).toContain(message)
-    })
-  })
-
-  it('should return 201 - list created succesfully', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/lists')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ title: 'new list' })
-
-    expect(response.status).toBe(201)
-    expect(response.body).toEqual({
-      title: 'new list',
-      id: expect.any(String)
-    })
-
-    await listsRepository.deleteAll()
+    expect(response.status).toBe(200)
+    console.log(response.body)
   })
 })
