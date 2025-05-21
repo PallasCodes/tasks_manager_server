@@ -1,4 +1,10 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateTaskDto } from './create-task.dto';
+import { ApiProperty, PartialType } from '@nestjs/swagger'
+import { IsBoolean } from 'class-validator'
 
-export class UpdateTaskDto extends PartialType(CreateTaskDto) {}
+import { CreateTaskDto } from './create-task.dto'
+
+export class UpdateTaskDto extends PartialType(CreateTaskDto) {
+  @ApiProperty({ nullable: true })
+  @IsBoolean()
+  done?: boolean
+}

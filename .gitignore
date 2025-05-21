@@ -1,4 +1,5 @@
 postgres/
+postgres-test/
 
 # compiled output
 /dist
