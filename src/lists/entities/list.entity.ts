@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
 
-import { Task } from '../../tasks/entities/task.entity'
 import {
   Column,
   Entity,
@@ -8,7 +7,9 @@ import {
   OneToMany,
   PrimaryGeneratedColumn
 } from 'typeorm'
-import { User } from 'src/auth/entities/user.entity'
+
+import { User } from '../../auth/entities/user.entity'
+import { Task } from '../../tasks/entities/task.entity'
 
 @Entity()
 export class List {
@@ -28,6 +29,6 @@ export class List {
   tasks: Task[]
 
   @ApiProperty()
-  @ManyToOne(() => User, (user) => user.lists)
+  @ManyToOne(() => User, (user) => user.lists, { onDelete: 'CASCADE' })
   user: User
 }

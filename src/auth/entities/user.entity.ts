@@ -40,7 +40,7 @@ export class User {
   isActive: boolean
 
   @ApiProperty()
-  @OneToMany(() => List, (list) => list.user)
+  @OneToMany(() => List, (list) => list.user, { onDelete: 'CASCADE' })
   lists: List[]
 
   @BeforeInsert()

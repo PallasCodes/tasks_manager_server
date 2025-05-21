@@ -85,7 +85,14 @@ describe('AuthModule Private (e2e)', () => {
     expect(response.status).toBe(201)
     expect(response.body).toEqual({
       title: 'new list',
-      id: expect.any(String)
+      id: expect.any(String),
+      user: {
+        email: testingUser.email,
+        id: expect.any(String),
+        isActive: true,
+        roles: ['user'],
+        username: testingUser.username
+      }
     })
 
     await listsRepository.deleteAll()
