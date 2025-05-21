@@ -20,7 +20,7 @@ export class ListsService {
 
   findAll(user: User) {
     return this.listRepository.find({
-      where: { user },
+      where: { user: { id: user.id } },
       loadRelationIds: { relations: ['user'] }
     })
   }

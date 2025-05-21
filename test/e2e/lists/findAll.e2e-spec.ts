@@ -14,6 +14,11 @@ const testingUser = {
   password: 'Abc12345',
   username: 'Testing user'
 }
+const testingUser2 = {
+  email: 'testing2.user@google.com',
+  password: 'Abc12345',
+  username: 'Testing user 2'
+}
 
 describe('AuthModule Private (e2e)', () => {
   let app: INestApplication
@@ -21,6 +26,8 @@ describe('AuthModule Private (e2e)', () => {
   let listsRepository: Repository<List>
 
   let token: string
+  let userId: string
+  let userId2: string
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -44,8 +51,17 @@ describe('AuthModule Private (e2e)', () => {
     const responseUser = await request(app.getHttpServer())
       .post('/auth/register')
       .send(testingUser)
+    const responseUser2 = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send(testingUser2)
 
     token = responseUser.body.token
+    userId = responseUser.body.user.id
+    userId2 = responseUser2.body.id
+  })
+
+  beforeEach(async () => {
+    await listsRepository.deleteAll()
   })
 
   afterAll(async () => {
@@ -59,12 +75,22 @@ describe('AuthModule Private (e2e)', () => {
     expect(response.status).toBe(401)
   })
 
-  it('should return all lists created by the logged in user', async () => {
+  it('should return only the lists created by the logged in user', async () => {
+    const user1 = await userRepository.findOneBy({ id: userId })
+    const user2 = await userRepository.findOneBy({ id: userId2 })
+    const list1 = await listsRepository.save({ title: 'list1', user: user1 })
+    const list2 = await listsRepository.save({ title: 'list2', user: user1 })
+    const list3 = await listsRepository.save({ title: 'list3', user: user2 })
+
     const response = await request(app.getHttpServer())
       .get('/lists')
       .set('Authorization', `Bearer ${token}`)
 
     expect(response.status).toBe(200)
-    console.log(response.body)
+    expect(response.body.length).toBe(2)
+    expect(response.body).toEqual([
+      { id: list1.id, title: list1.title, user: list1.user.id },
+      { id: list2.id, title: list2.title, user: list2.user.id }
+    ])
   })
 })
