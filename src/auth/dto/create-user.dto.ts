@@ -14,7 +14,7 @@ export class CreateUserDto {
     maxLength: 20
   })
   @IsString()
-  @MinLength(4)
+  @MinLength(1)
   @MaxLength(20)
   username: string
 
@@ -27,7 +27,7 @@ export class CreateUserDto {
 
   @ApiProperty({
     description:
-      'Passwords must have a lowercase and uppercase letter, a number and must have 8 words minimum and 32 maximum',
+      'password must have a lowercase and uppercase letter, a number and must have 8 words minimum and 32 maximum',
     nullable: false,
     minLength: 8,
     maxLength: 32
@@ -37,7 +37,7 @@ export class CreateUserDto {
   @MaxLength(32)
   @Matches(/(?:(?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
     message:
-      'Password must have a lowercase and uppercase letter, a number and must have 8 words minimum and 32 maximum'
+      'password must have a lowercase and uppercase letter, a number and must have 8 words minimum and 32 maximum'
   })
   password: string
 }

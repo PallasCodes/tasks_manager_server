@@ -32,7 +32,7 @@ export class AuthService {
       await this.userRepository.save(user)
 
       delete user.password
-      return { ...user, token: this.getJwtToken({ id: user.id }) }
+      return { user, token: this.getJwtToken({ id: user.id }) }
     } catch (error) {
       this.handleDBErrors(error)
     }
