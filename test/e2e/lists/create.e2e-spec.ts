@@ -11,7 +11,7 @@ import { User } from '../../../src/auth/entities/user.entity'
 const testingUser = {
   email: 'testing.user@google.com',
   password: 'Abc12345',
-  fullName: 'Testing user'
+  username: 'Testing user'
 }
 
 describe('AuthModule Private (e2e)', () => {
@@ -19,7 +19,6 @@ describe('AuthModule Private (e2e)', () => {
   let userRepository: Repository<User>
 
   let token: string
-  let adminToken: string
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -50,8 +49,17 @@ describe('AuthModule Private (e2e)', () => {
     await app.close()
   })
 
-  it('should return 400 - title is required', async () => {
+  it('should return 401 - user is not logged in', async () => {
     const response = await request(app.getHttpServer()).post('/lists').send({})
+
+    expect(response.status).toBe(401)
+  })
+
+  it('should return 400 - title is required', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/lists')
+      .set('Authorization', `Bearer ${token}`)
+      .send({})
 
     const errorMessages = [
       'title must be shorter than or equal to 100 characters',
@@ -68,6 +76,7 @@ describe('AuthModule Private (e2e)', () => {
   it('should return 201 - list created succesfully', async () => {
     const response = await request(app.getHttpServer())
       .post('/lists')
+      .set('Authorization', `Bearer ${token}`)
       .send({ title: 'new list' })
 
     expect(response.status).toBe(201)

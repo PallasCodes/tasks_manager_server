@@ -7,10 +7,13 @@ import {
   Patch,
   Post
 } from '@nestjs/common'
+
+import { Auth } from '../auth/decorators'
 import { CreateListDto } from './dto/create-list.dto'
 import { UpdateListDto } from './dto/update-list.dto'
 import { ListsService } from './lists.service'
 
+@Auth()
 @Controller('lists')
 export class ListsController {
   constructor(private readonly listsService: ListsService) {}
