@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   UnauthorizedException
@@ -69,7 +70,9 @@ export class AuthService {
   }
 
   private handleDBErrors(error: any): never {
-    if (error.code === '23505') throw new BadRequestException(error.detail)
+    if (error.code === '23505') {
+      throw new ConflictException('This email is already registered')
+    }
 
     console.log(error)
     throw new InternalServerErrorException('Check server logs')
