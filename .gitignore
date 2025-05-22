@@ -1,5 +1,6 @@
 postgres/
 postgres-test/
+coverage-e2e/
 
 # compiled output
 /dist

@@ -15,7 +15,7 @@ const testingUser = {
   username: 'Testing user'
 }
 
-describe('AuthModule Private (e2e)', () => {
+describe('ListsModule create (e2e)', () => {
   let app: INestApplication
   let userRepository: Repository<User>
   let listsRepository: Repository<List>
@@ -49,6 +49,7 @@ describe('AuthModule Private (e2e)', () => {
 
   afterAll(async () => {
     await userRepository.delete({ email: testingUser.email })
+    await listsRepository.deleteAll()
     await app.close()
   })
 

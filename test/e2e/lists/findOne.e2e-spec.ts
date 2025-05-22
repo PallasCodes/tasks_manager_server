@@ -14,20 +14,14 @@ const testingUser = {
   password: 'Abc12345',
   username: 'Testing user'
 }
-const testingUser2 = {
-  email: 'testing2.user@google.com',
-  password: 'Abc12345',
-  username: 'Testing user 2'
-}
 
-describe('ListsModule findAll (e2e)', () => {
+describe('ListsModule findOne (e2e)', () => {
   let app: INestApplication
   let userRepository: Repository<User>
   let listsRepository: Repository<List>
 
   let token: string
-  let userId: string
-  let userId2: string
+  let loggedUserId: string
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -51,13 +45,9 @@ describe('ListsModule findAll (e2e)', () => {
     const responseUser = await request(app.getHttpServer())
       .post('/auth/register')
       .send(testingUser)
-    const responseUser2 = await request(app.getHttpServer())
-      .post('/auth/register')
-      .send(testingUser2)
 
     token = responseUser.body.token
-    userId = responseUser.body.user.id
-    userId2 = responseUser2.body.id
+    loggedUserId = responseUser.body.user.id
   })
 
   beforeEach(async () => {
@@ -71,29 +61,40 @@ describe('ListsModule findAll (e2e)', () => {
   })
 
   it('should return 401 - user is not logged in', async () => {
-    const response = await request(app.getHttpServer()).get('/lists')
+    const response = await request(app.getHttpServer()).get('/lists/123')
 
     expect(response.status).toBe(401)
   })
 
-  it('should return only the lists created by the logged in user', async () => {
-    const user1 = await userRepository.findOneBy({ id: userId })
-    const list1 = await listsRepository.save({ title: 'list1', user: user1 })
-    const list2 = await listsRepository.save({ title: 'list2', user: user1 })
-
-    const user2 = await userRepository.findOneBy({ id: userId2 })
-    await listsRepository.save({ title: 'list3', user: user2 })
+  it('should return a 404 error', async () => {
+    const list = await listsRepository.save({
+      title: 'new list',
+      user: { id: loggedUserId }
+    })
 
     const response = await request(app.getHttpServer())
-      .get('/lists')
+      .get(`/lists/${list.id}123`)
+      .set('Authorization', `Bearer ${token}`)
+
+    expect(response.status).toBe(404)
+    expect(response.body).toEqual({
+      error: 'Not Found',
+      statusCode: 404,
+      message: `List with id ${list.id}123 not found`
+    })
+  })
+
+  it('should found and return a list created by the logged user', async () => {
+    const list = await listsRepository.save({
+      title: 'new list',
+      user: { id: loggedUserId }
+    })
+
+    const response = await request(app.getHttpServer())
+      .get(`/lists/${list.id}`)
       .set('Authorization', `Bearer ${token}`)
 
     expect(response.status).toBe(200)
-    expect(response.body.length).toBe(2)
-    expect(response.body).toEqual([
-      { id: list1.id, title: list1.title, user: list1.user.id },
-      { id: list2.id, title: list2.title, user: list2.user.id }
-    ])
-    console.log('🚀 ~ it ~ response.body:', response.body)
+    expect(response.body).toEqual({ id: expect.any(String), title: list.title })
   })
 })
