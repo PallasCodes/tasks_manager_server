@@ -8,12 +8,13 @@ import {
   Post
 } from '@nestjs/common'
 
-import { GetUser } from '../auth/decorators'
+import { Auth, GetUser } from '../auth/decorators'
 import { User } from '../auth/entities/user.entity'
 import { CreateTaskDto } from './dto/create-task.dto'
 import { UpdateTaskDto } from './dto/update-task.dto'
 import { TasksService } from './tasks.service'
 
+@Auth()
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
