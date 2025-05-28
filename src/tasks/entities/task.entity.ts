@@ -20,6 +20,10 @@ export class Task {
   @Column('boolean', { default: false })
   done: boolean
 
+  @ApiProperty({ default: false })
+  @Column('boolean', { default: false })
+  pinned: boolean
+
   @ApiProperty({ nullable: true })
   @ManyToOne(() => List, (list) => list.tasks, {
     onDelete: 'SET NULL'
