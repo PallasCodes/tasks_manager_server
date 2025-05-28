@@ -22,7 +22,8 @@ export class ListsService {
     return this.listRepository.find({
       where: { user: { id: user.id } },
       loadRelationIds: { relations: ['user'] },
-      relations: ['tasks']
+      relations: ['tasks'],
+      order: { createdAt: 'DESC', tasks: { createdAt: 'DESC' } }
     })
   }
 

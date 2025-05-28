@@ -10,9 +10,10 @@ import {
 
 import { User } from '../../auth/entities/user.entity'
 import { Task } from '../../tasks/entities/task.entity'
+import { BaseEntity } from '../../common/entities/base-entity.entity'
 
 @Entity()
-export class List {
+export class List extends BaseEntity {
   @ApiProperty({
     example: 'cd533345-f1f3-48c9-a62e-7dc2da50c8f8',
     uniqueItems: true

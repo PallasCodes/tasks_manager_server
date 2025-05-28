@@ -25,7 +25,8 @@ export class TasksService {
 
   findAll() {
     return this.taskRepository.find({
-      relations: { list: true }
+      relations: { list: true },
+      order: { createdAt: 'DESC' }
     })
   }
 

@@ -1,10 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 
+import { BaseEntity } from '../../common/entities/base-entity.entity'
 import { List } from '../../lists/entities/list.entity'
 
 @Entity()
-export class Task {
+export class Task extends BaseEntity {
   @ApiProperty({
     example: 'cd533345-f1f3-48c9-a62e-7dc2da50c8f8',
     uniqueItems: true
