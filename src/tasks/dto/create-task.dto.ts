@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsString, IsUUID, MaxLength, MinLength } from 'class-validator'
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  MinLength
+} from 'class-validator'
 
 export class CreateTaskDto {
   @ApiProperty()
@@ -14,4 +21,9 @@ export class CreateTaskDto {
   })
   @IsUUID('4')
   listId: string
+
+  @ApiProperty()
+  @IsBoolean()
+  @IsOptional()
+  pinned: boolean
 }
