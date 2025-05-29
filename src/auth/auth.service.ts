@@ -33,7 +33,11 @@ export class AuthService {
       await this.userRepository.save(user)
 
       delete user.password
-      return { user, token: this.getJwtToken({ id: user.id }) }
+      return {
+        user,
+        token: this.getJwtToken({ id: user.id }),
+        tokenExpiration: this.getTokeExpirationDate()
+      }
     } catch (error) {
       this.handleDBErrors(error)
     }
@@ -61,7 +65,11 @@ export class AuthService {
 
     delete user.password
 
-    return { user, token: this.getJwtToken({ id: user.id }) }
+    return {
+      user,
+      token: this.getJwtToken({ id: user.id }),
+      tokenExpiration: this.getTokeExpirationDate()
+    }
   }
 
   private getJwtToken(payload: JwtPayload) {
@@ -76,5 +84,10 @@ export class AuthService {
 
     console.log(error)
     throw new InternalServerErrorException('Check server logs')
+  }
+
+  private getTokeExpirationDate() {
+    const now = new Date().getTime()
+    return now + 24 * 60 * 60 * 1000
   }
 }
