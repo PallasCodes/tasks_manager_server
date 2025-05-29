@@ -5,7 +5,8 @@ import {
   Get,
   Param,
   Patch,
-  Post
+  Post,
+  Query
 } from '@nestjs/common'
 
 import { Auth, GetUser } from '../auth/decorators'
@@ -25,8 +26,8 @@ export class TasksController {
   }
 
   @Get()
-  findAll() {
-    return this.tasksService.findAll()
+  findAll(@Query('pinned') pinned: boolean) {
+    return this.tasksService.findAll(pinned)
   }
 
   @Get(':id')

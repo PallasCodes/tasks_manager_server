@@ -23,11 +23,15 @@ export class TasksService {
     return this.taskRepository.save({ ...restCreateTaskDto, list })
   }
 
-  findAll() {
-    return this.taskRepository.find({
-      relations: { list: true },
-      order: { createdAt: 'DESC' }
-    })
+  findAll(pinned?: boolean) {
+    return pinned
+      ? this.taskRepository.find({
+          where: { pinned: true },
+          order: { createdAt: 'DESC' }
+        })
+      : this.taskRepository.find({
+          order: { createdAt: 'DESC' }
+        })
   }
 
   findOne(id: string) {
