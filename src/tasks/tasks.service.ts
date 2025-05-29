@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 
-import { Repository } from 'typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
 
 import { User } from '../auth/entities/user.entity'
 import { ListsService } from '../lists/lists.service'
@@ -23,32 +23,46 @@ export class TasksService {
     return this.taskRepository.save({ ...restCreateTaskDto, list })
   }
 
-  findAll(pinned?: boolean) {
-    return pinned
-      ? this.taskRepository.find({
-          where: { pinned: true },
-          order: { createdAt: 'DESC' }
-        })
-      : this.taskRepository.find({
-          order: { createdAt: 'DESC' }
-        })
+  findAll(user: User, pinned?: boolean) {
+    const baseQuery: FindManyOptions<Task> = {
+      where: {
+        list: {
+          user: {
+            id: user.id
+          }
+        }
+      },
+      order: { createdAt: 'DESC' }
+    }
+    if (pinned) baseQuery.where['pinned'] = true
+
+    return this.taskRepository.find(baseQuery)
   }
 
-  findOne(id: string) {
-    return this.taskRepository.findOneBy({ id }).catch(() => {
-      throw new NotFoundException(`Task with id ${id} not found`)
-    })
+  findOne(id: string, user: User) {
+    return this.taskRepository
+      .findOne({
+        where: {
+          id,
+          list: {
+            user: { id: user.id }
+          }
+        }
+      })
+      .catch(() => {
+        throw new NotFoundException(`Task with id ${id} not found`)
+      })
   }
 
-  async update(id: string, updateTaskDto: UpdateTaskDto) {
-    const task = await this.findOne(id)
+  async update(id: string, updateTaskDto: UpdateTaskDto, user: User) {
+    const task = await this.findOne(id, user)
     this.taskRepository.merge(task, updateTaskDto)
 
     return this.taskRepository.save(task)
   }
 
-  async remove(id: string) {
-    const task = await this.findOne(id)
+  async remove(id: string, user: User) {
+    const task = await this.findOne(id, user)
 
     return this.taskRepository.remove(task)
   }

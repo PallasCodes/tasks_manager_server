@@ -26,22 +26,26 @@ export class TasksController {
   }
 
   @Get()
-  findAll(@Query('pinned') pinned: boolean) {
-    return this.tasksService.findAll(pinned)
+  findAll(@Query('pinned') pinned: boolean, @GetUser() user: User) {
+    return this.tasksService.findAll(user, pinned)
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tasksService.findOne(id)
+  findOne(@Param('id') id: string, @GetUser() user: User) {
+    return this.tasksService.findOne(id, user)
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
-    return this.tasksService.update(id, updateTaskDto)
+  update(
+    @Param('id') id: string,
+    @Body() updateTaskDto: UpdateTaskDto,
+    @GetUser() user: User
+  ) {
+    return this.tasksService.update(id, updateTaskDto, user)
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.tasksService.remove(id)
+  remove(@Param('id') id: string, @GetUser() user: User) {
+    return this.tasksService.remove(id, user)
   }
 }
