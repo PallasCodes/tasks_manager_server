@@ -20,7 +20,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('Tasks Manager API')
     .setDescription('Tasks Manager API')
-    .setVersion('1.0')
+    .setVersion('0.1')
     .build()
   const document = SwaggerModule.createDocument(app, config)
   SwaggerModule.setup('api', app, document)
