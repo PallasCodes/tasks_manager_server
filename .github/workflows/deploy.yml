@@ -27,5 +27,5 @@ jobs:
             git pull origin master
             npm install --production
             npm run build
-            pm2 restart tasks-manager
+            pm2 restart tasks_manager
           EOF
