@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -11,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
 import { Repository } from 'typeorm'
 
+import { List } from '../lists/entities/list.entity'
 import { CreateUserDto, LoginUserDto } from './dto'
 import { User } from './entities/user.entity'
 import { JwtPayload } from './interfaces/jwt-payload.interface'
@@ -19,6 +19,7 @@ import { JwtPayload } from './interfaces/jwt-payload.interface'
 export class AuthService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(List) private readonly listRepository: Repository<List>,
     private readonly jwtService: JwtService
   ) {}
 
@@ -31,8 +32,14 @@ export class AuthService {
         password: bcrypt.hashSync(password, 10)
       })
       await this.userRepository.save(user)
+      const list = this.listRepository.create({
+        title: 'ToDo',
+        user: { id: user.id }
+      })
+      await this.listRepository.save(list)
 
       delete user.password
+
       return {
         user,
         token: this.getJwtToken({ id: user.id }),
