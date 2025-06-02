@@ -1,10 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger'
 import {
   IsBoolean,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
   MaxLength,
+  Min,
   MinLength
 } from 'class-validator'
 
@@ -33,4 +35,10 @@ export class CreateTaskDto {
   @MaxLength(500)
   @IsOptional()
   description?: string
+
+  @ApiProperty()
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  estimatedTime?: number
 }

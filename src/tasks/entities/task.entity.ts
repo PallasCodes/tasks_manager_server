@@ -29,6 +29,10 @@ export class Task extends BaseEntity {
   @Column('text', { nullable: true })
   description: string
 
+  @ApiProperty()
+  @Column('int', { nullable: true })
+  estimatedTime: number
+
   @ApiProperty({ nullable: true })
   @ManyToOne(() => List, (list) => list.tasks, {
     onDelete: 'SET NULL'
