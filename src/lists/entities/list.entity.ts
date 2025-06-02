@@ -25,6 +25,10 @@ export class List extends BaseEntity {
   @Column('text', { nullable: false })
   title: string
 
+  @ApiProperty()
+  @Column('int')
+  order: number
+
   @ApiProperty({ nullable: true })
   @OneToMany(() => Task, (task) => task.list)
   tasks: Task[]
