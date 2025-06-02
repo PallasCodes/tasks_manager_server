@@ -26,4 +26,11 @@ export class CreateTaskDto {
   @IsBoolean()
   @IsOptional()
   pinned: boolean
+
+  @ApiProperty()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(500)
+  @IsOptional()
+  description?: string
 }

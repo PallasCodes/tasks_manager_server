@@ -25,6 +25,10 @@ export class Task extends BaseEntity {
   @Column('boolean', { default: false })
   pinned: boolean
 
+  @ApiProperty()
+  @Column('text', { nullable: true })
+  description: string
+
   @ApiProperty({ nullable: true })
   @ManyToOne(() => List, (list) => list.tasks, {
     onDelete: 'SET NULL'
