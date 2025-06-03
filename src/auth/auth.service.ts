@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
@@ -11,9 +12,10 @@ import * as bcrypt from 'bcrypt'
 import { Repository } from 'typeorm'
 
 import { List } from '../lists/entities/list.entity'
-import { CreateUserDto, LoginUserDto } from './dto'
+import { CreateUserDto, LoginUserDto, RequestPasswordRestoreDto } from './dto'
 import { User } from './entities/user.entity'
 import { JwtPayload } from './interfaces/jwt-payload.interface'
+import { sendEmail } from 'src/utils/send-email.util'
 
 @Injectable()
 export class AuthService {
@@ -22,6 +24,33 @@ export class AuthService {
     @InjectRepository(List) private readonly listRepository: Repository<List>,
     private readonly jwtService: JwtService
   ) {}
+
+  requestPasswordRestore({ email }: RequestPasswordRestoreDto) {
+    const emailBody = `
+    <p><a href="${process.env.CLIENT_URL}/restore-password" target="_blank">Click here</a> to restore your password at tasks-manager.bernardo-torres.com</p>
+    <p><i>*This link will expire in 15 minutes</i></p>
+    `
+    return sendEmail({
+      to: email,
+      subject: 'Password restore',
+      html: emailBody
+    })
+  }
+
+  async restorePassword(dto: LoginUserDto) {
+    const user = await this.userRepository
+      .findOneByOrFail({ email: dto.email })
+      .catch(() => {
+        throw new NotFoundException('User not found')
+      })
+
+    user.password = bcrypt.hashSync(dto.password, 10)
+    await this.userRepository.save(user)
+
+    return {
+      message: 'Password restored succesfully!'
+    }
+  }
 
   async register(createUserDto: CreateUserDto) {
     try {
@@ -34,7 +63,8 @@ export class AuthService {
       await this.userRepository.save(user)
       const list = this.listRepository.create({
         title: 'ToDo',
-        user: { id: user.id }
+        user: { id: user.id },
+        order: 1
       })
       await this.listRepository.save(list)
 

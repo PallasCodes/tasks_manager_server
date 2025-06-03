@@ -1,11 +1,9 @@
-import { Body, Controller, Get, Post } from '@nestjs/common'
+import { Body, Controller, Post } from '@nestjs/common'
 import { ApiResponse } from '@nestjs/swagger'
 
 import { AuthService } from './auth.service'
-import { CreateUserDto, LoginUserDto } from './dto'
+import { CreateUserDto, LoginUserDto, RequestPasswordRestoreDto } from './dto'
 import { User } from './entities/user.entity'
-import { Auth } from './decorators'
-import { ValidRoles } from './interfaces/valid-roles.interface'
 
 @Controller('auth')
 export class AuthController {
@@ -23,5 +21,17 @@ export class AuthController {
   @Post('login')
   login(@Body() loginUserDto: LoginUserDto) {
     return this.authService.login(loginUserDto)
+  }
+
+  @ApiResponse({ status: 201 })
+  @Post('restore-password')
+  restorePassword(@Body() dto: LoginUserDto) {
+    return this.authService.restorePassword(dto)
+  }
+
+  @ApiResponse({ status: 201 })
+  @Post('request-password-restore')
+  requestPasswordRestore(@Body() dto: RequestPasswordRestoreDto) {
+    return this.authService.requestPasswordRestore(dto)
   }
 }

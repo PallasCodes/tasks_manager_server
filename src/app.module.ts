@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
-import { ListsModule } from './lists/lists.module';
-import { TasksModule } from './tasks/tasks.module';
-import { CommonModule } from './common/common.module';
+import { ConfigModule } from '@nestjs/config'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { AuthModule } from './auth/auth.module'
+import { ListsModule } from './lists/lists.module'
+import { TasksModule } from './tasks/tasks.module'
+import { CommonModule } from './common/common.module'
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
