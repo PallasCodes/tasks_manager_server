@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 
-import { FindManyOptions, Repository } from 'typeorm'
+import { Between, FindManyOptions, Repository } from 'typeorm'
 
 import { User } from '../auth/entities/user.entity'
 import { ListsService } from '../lists/lists.service'
@@ -20,7 +20,15 @@ export class TasksService {
     const { listId, ...restCreateTaskDto } = createTaskDto
     const list = await this.listsService.findOne(listId, user)
 
-    return this.taskRepository.save({ ...restCreateTaskDto, list })
+    const order = await this.taskRepository.count({
+      where: { list: { id: list.id }, done: false }
+    })
+
+    return this.taskRepository.save({
+      ...restCreateTaskDto,
+      list,
+      order: order + 1
+    })
   }
 
   findAll(user: User, pinned?: boolean) {
@@ -39,7 +47,7 @@ export class TasksService {
     return this.taskRepository.find(baseQuery)
   }
 
-  findOne(id: string, user: User) {
+  findOne(id: string, user: User, listRelation = false) {
     return this.taskRepository
       .findOne({
         where: {
@@ -47,7 +55,8 @@ export class TasksService {
           list: {
             user: { id: user.id }
           }
-        }
+        },
+        relations: [listRelation ? 'list' : null]
       })
       .catch(() => {
         throw new NotFoundException(`Task with id ${id} not found`)
@@ -55,9 +64,44 @@ export class TasksService {
   }
 
   async update(id: string, updateTaskDto: UpdateTaskDto, user: User) {
-    const task = await this.findOne(id, user)
-    this.taskRepository.merge(task, updateTaskDto)
+    const task = await this.findOne(id, user, true)
 
+    const originalOrder = task.order
+    const newOrder = updateTaskDto.order
+
+    if (newOrder !== undefined && newOrder !== originalOrder) {
+      if (newOrder > originalOrder) {
+        const tasksToUpdate = await this.taskRepository.find({
+          where: {
+            list: { id: task.list.id },
+            order: Between(originalOrder + 1, newOrder)
+          }
+        })
+
+        for (const t of tasksToUpdate) {
+          t.order -= 1
+        }
+
+        await this.taskRepository.save(tasksToUpdate)
+      } else {
+        const tasksToUpdate = await this.taskRepository.find({
+          where: {
+            list: { id: task.list.id },
+            order: Between(newOrder, originalOrder - 1)
+          }
+        })
+
+        for (const t of tasksToUpdate) {
+          t.order += 1
+        }
+
+        await this.taskRepository.save(tasksToUpdate)
+      }
+
+      task.order = newOrder
+    }
+
+    this.taskRepository.merge(task, updateTaskDto)
     return this.taskRepository.save(task)
   }
 

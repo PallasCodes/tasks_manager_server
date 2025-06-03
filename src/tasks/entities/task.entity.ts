@@ -33,6 +33,10 @@ export class Task extends BaseEntity {
   @Column('int', { nullable: true })
   estimatedTime: number
 
+  @ApiProperty()
+  @Column('int')
+  order: number
+
   @ApiProperty({ nullable: true })
   @ManyToOne(() => List, (list) => list.tasks, {
     onDelete: 'SET NULL'

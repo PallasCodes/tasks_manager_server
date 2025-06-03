@@ -1,5 +1,5 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger'
-import { IsBoolean, IsOptional } from 'class-validator'
+import { IsBoolean, IsInt, IsOptional, IsPositive } from 'class-validator'
 
 import { CreateTaskDto } from './create-task.dto'
 
@@ -13,4 +13,10 @@ export class UpdateTaskDto extends PartialType(CreateTaskDto) {
   @IsBoolean()
   @IsOptional()
   pinned?: boolean
+
+  @ApiProperty({ nullable: true })
+  @IsInt()
+  @IsPositive()
+  @IsOptional()
+  order?: number
 }

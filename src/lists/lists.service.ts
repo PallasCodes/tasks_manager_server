@@ -36,7 +36,7 @@ export class ListsService {
       where: { user: { id: user.id } },
       loadRelationIds: { relations: ['user'] },
       relations: ['tasks'],
-      order: { order: 'ASC', tasks: { createdAt: 'DESC' } }
+      order: { order: 'ASC', tasks: { order: 'ASC' } }
     })
   }
 
