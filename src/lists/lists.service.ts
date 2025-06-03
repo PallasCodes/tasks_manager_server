@@ -1,15 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 
-import {
-  Between,
-  LessThan,
-  LessThanOrEqual,
-  MoreThan,
-  MoreThanOrEqual,
-  Not,
-  Repository
-} from 'typeorm'
+import { Between, Repository } from 'typeorm'
 
 import { User } from '../auth/entities/user.entity'
 import { CreateListDto } from './dto/create-list.dto'

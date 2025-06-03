@@ -101,6 +101,15 @@ export class TasksService {
       task.order = newOrder
     }
 
+    if (updateTaskDto.listId) {
+      task.list.id = updateTaskDto.listId
+      const order = await this.taskRepository.countBy({
+        list: { id: updateTaskDto.listId },
+        done: false
+      })
+      task.order = order + 1
+    }
+
     this.taskRepository.merge(task, updateTaskDto)
     return this.taskRepository.save(task)
   }
