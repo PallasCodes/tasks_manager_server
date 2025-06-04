@@ -4,6 +4,7 @@ import { ApiResponse } from '@nestjs/swagger'
 import { AuthService } from './auth.service'
 import { CreateUserDto, LoginUserDto, RequestPasswordRestoreDto } from './dto'
 import { User } from './entities/user.entity'
+import { RestorePasswordDto } from './dto/restore-password.dto'
 
 @Controller('auth')
 export class AuthController {
@@ -25,7 +26,7 @@ export class AuthController {
 
   @ApiResponse({ status: 201 })
   @Post('restore-password')
-  restorePassword(@Body() dto: LoginUserDto) {
+  restorePassword(@Body() dto: RestorePasswordDto) {
     return this.authService.restorePassword(dto)
   }
 

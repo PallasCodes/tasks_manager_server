@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -11,11 +12,11 @@ import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
 import { Repository } from 'typeorm'
 
+import { sendEmail } from 'src/utils/send-email.util'
 import { List } from '../lists/entities/list.entity'
 import { CreateUserDto, LoginUserDto, RequestPasswordRestoreDto } from './dto'
+import { RestorePasswordDto } from './dto/restore-password.dto'
 import { User } from './entities/user.entity'
-import { JwtPayload } from './interfaces/jwt-payload.interface'
-import { sendEmail } from 'src/utils/send-email.util'
 
 @Injectable()
 export class AuthService {
@@ -25,30 +26,56 @@ export class AuthService {
     private readonly jwtService: JwtService
   ) {}
 
-  requestPasswordRestore({ email }: RequestPasswordRestoreDto) {
-    const emailBody = `
-    <p><a href="${process.env.CLIENT_URL}/restore-password" target="_blank">Click here</a> to restore your password at tasks-manager.bernardo-torres.com</p>
-    <p><i>*This link will expire in 15 minutes</i></p>
-    `
-    return sendEmail({
-      to: email,
-      subject: 'Password restore',
-      html: emailBody
-    })
-  }
+  async requestPasswordRestore({ email }: RequestPasswordRestoreDto) {
+    try {
+      const user = await this.userRepository
+        .findOneByOrFail({ email })
+        .catch(() => {
+          throw new NotFoundException('User not found')
+        })
 
-  async restorePassword(dto: LoginUserDto) {
-    const user = await this.userRepository
-      .findOneByOrFail({ email: dto.email })
-      .catch(() => {
-        throw new NotFoundException('User not found')
+      const token = this.jwtService.sign(
+        { id: user.id, email: user.email },
+        { expiresIn: '15m' }
+      )
+
+      const emailBody = `
+        <p><a href="${process.env.CLIENT_URL}/restore-password?token=${token}" target="_blank">Click here</a> to restore your password at tasks-manager.bernardo-torres.com</p>
+        <p><i>*This link will expire in 15 minutes</i></p>
+        `
+      const { error } = await sendEmail({
+        to: email,
+        subject: 'Password restore',
+        html: emailBody
       })
+      // TODO: enhance error handling
+      if (error) throw new Error()
 
-    user.password = bcrypt.hashSync(dto.password, 10)
+      return { message: 'We have sent you an email to restore your password' }
+    } catch (error) {
+      throw new InternalServerErrorException()
+    }
+  }
+  async restorePassword(dto: RestorePasswordDto) {
+    let payload: any
+
+    try {
+      payload = await this.jwtService.verifyAsync(dto.token)
+    } catch (err) {
+      throw new BadRequestException('Invalid or expired token')
+    }
+
+    const user = await this.userRepository.findOneBy({ email: payload.email })
+
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+
+    user.password = await bcrypt.hash(dto.newPassword, 10)
     await this.userRepository.save(user)
 
     return {
-      message: 'Password restored succesfully!'
+      message: 'Password restored successfully!'
     }
   }
 
@@ -72,7 +99,7 @@ export class AuthService {
 
       return {
         user,
-        token: this.getJwtToken({ id: user.id }),
+        token: this.jwtService.sign({ id: user.id }),
         tokenExpiration: this.getTokeExpirationDate()
       }
     } catch (error) {
@@ -104,14 +131,9 @@ export class AuthService {
 
     return {
       user,
-      token: this.getJwtToken({ id: user.id }),
+      token: this.jwtService.sign({ id: user.id }),
       tokenExpiration: this.getTokeExpirationDate()
     }
-  }
-
-  private getJwtToken(payload: JwtPayload) {
-    const token = this.jwtService.sign(payload)
-    return token
   }
 
   private handleDBErrors(error: any): never {
