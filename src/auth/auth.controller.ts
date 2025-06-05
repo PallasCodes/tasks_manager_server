@@ -5,6 +5,8 @@ import { AuthService } from './auth.service'
 import { CreateUserDto, LoginUserDto, RequestPasswordRestoreDto } from './dto'
 import { User } from './entities/user.entity'
 import { RestorePasswordDto } from './dto/restore-password.dto'
+import { Auth, GetUser } from './decorators'
+import { RequestPasswordChangeDto } from './dto/request-password-change.dto'
 
 @Controller('auth')
 export class AuthController {
@@ -34,5 +36,12 @@ export class AuthController {
   @Post('request-password-restore')
   requestPasswordRestore(@Body() dto: RequestPasswordRestoreDto) {
     return this.authService.requestPasswordRestore(dto)
+  }
+
+  @ApiResponse({ status: 201 })
+  @Auth()
+  @Post('change-password')
+  changePassword(@Body() dto: RequestPasswordChangeDto, @GetUser() user: User) {
+    return this.authService.requestPasswordChange(dto.newPassword, user)
   }
 }

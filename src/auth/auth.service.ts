@@ -56,23 +56,38 @@ export class AuthService {
       throw new InternalServerErrorException()
     }
   }
-  async restorePassword(dto: RestorePasswordDto) {
-    let payload: any
 
-    try {
-      payload = await this.jwtService.verifyAsync(dto.token)
-    } catch (err) {
-      throw new BadRequestException('Invalid or expired token')
-    }
-
-    const user = await this.userRepository.findOneBy({ email: payload.email })
+  private async changePassword(
+    email: string,
+    newPassword: string
+  ): Promise<void> {
+    const user = await this.userRepository.findOneBy({ email })
 
     if (!user) {
       throw new NotFoundException('User not found')
     }
 
-    user.password = await bcrypt.hash(dto.newPassword, 10)
+    user.password = await bcrypt.hash(newPassword, 10)
     await this.userRepository.save(user)
+  }
+
+  async requestPasswordChange(newPassword: string, user: User) {
+    await this.changePassword(user.email, newPassword)
+
+    return {
+      message: 'Password changed successfully'
+    }
+  }
+
+  async restorePassword(dto: RestorePasswordDto) {
+    let payload: any
+
+    try {
+      payload = await this.jwtService.verifyAsync(dto.token)
+      this.changePassword(payload.email, dto.newPassword)
+    } catch (err) {
+      throw new BadRequestException('Invalid or expired token')
+    }
 
     return {
       message: 'Password restored successfully!'
