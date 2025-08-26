@@ -49,14 +49,14 @@ export class TasksService {
 
   findOne(id: string, user: User, listRelation = false) {
     return this.taskRepository
-      .findOne({
+      .findOneOrFail({
         where: {
           id,
           list: {
             user: { id: user.id }
           }
         },
-        relations: [listRelation ? 'list' : null]
+        relations: listRelation ? ['list'] : []
       })
       .catch(() => {
         throw new NotFoundException(`Task with id ${id} not found`)
