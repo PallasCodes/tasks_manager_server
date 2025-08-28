@@ -1,14 +1,14 @@
+import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
+import { User } from '../auth/entities/user.entity'
+import { List } from '../lists/entities/list.entity'
 import { ListsService } from '../lists/lists.service'
+import { CreateTaskDto } from './dto/create-task.dto'
 import { Task } from './entities/task.entity'
 import { TasksService } from './tasks.service'
-import { List } from 'src/lists/entities/list.entity'
-import { User } from 'src/auth/entities/user.entity'
-import { CreateTaskDto } from './dto/create-task.dto'
-import { NotFoundException } from '@nestjs/common'
 
 describe('TasksService', () => {
   let service: TasksService
@@ -23,7 +23,8 @@ describe('TasksService', () => {
       countBy: jest.fn(),
       merge: jest.fn(),
       remove: jest.fn(),
-      create: jest.fn()
+      create: jest.fn(),
+      findOneOrFail: jest.fn()
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -168,4 +169,93 @@ describe('TasksService', () => {
     expect(taskRepository.count).not.toHaveBeenCalled()
     expect(taskRepository.save).not.toHaveBeenCalled()
   })
+
+  it('findOne() implement the right querying', async () => {
+    const user = { id: 'u1' } as User
+    const task = { id: 't1' } as Task
+
+    const saveSpy = jest
+      .spyOn(taskRepository, 'findOneOrFail')
+      .mockResolvedValue(task)
+
+    const result = await service.findOne(task.id, user)
+
+    expect(saveSpy).toHaveBeenCalledWith({
+      where: {
+        id: task.id,
+        list: {
+          user: { id: user.id }
+        }
+      },
+      relations: []
+    })
+    expect(result).toEqual(task)
+  })
+
+  it('findOne() implement the right querying with LIST relation', async () => {
+    const user = { id: 'u1' } as User
+    const task = { id: 't1' } as Task
+
+    const saveSpy = jest
+      .spyOn(taskRepository, 'findOneOrFail')
+      .mockResolvedValue(task)
+
+    const result = await service.findOne(task.id, user, true)
+
+    expect(saveSpy).toHaveBeenCalledWith({
+      where: {
+        id: task.id,
+        list: {
+          user: { id: user.id }
+        }
+      },
+      relations: ['list']
+    })
+    expect(result).toEqual(task)
+  })
+
+  it('findOne() should throw a NotFoundException', async () => {
+    const user = { id: 'u1' } as User
+
+    jest
+      .spyOn(taskRepository, 'findOneOrFail')
+      .mockRejectedValue(new BadRequestException())
+
+    try {
+      await service.findOne('bad', user, true)
+    } catch (error: any) {
+      const errorMsg = error.getResponse().message
+      expect(errorMsg).toBe('Task with id bad not found')
+
+      expect(error).toBeInstanceOf(NotFoundException)
+    }
+  })
+
+  it('remove() should return the removed task', async () => {
+    const user = { id: 'u1' } as User
+    const task = { id: 't1' } as Task
+
+    jest.spyOn(service, 'findOne').mockResolvedValue(task)
+    jest.spyOn(taskRepository, 'remove').mockResolvedValue(task)
+
+    const result = await service.remove(task.id, user)
+
+    expect(result).toEqual(task)
+  })
+
+  it('remove() should throw a NotFoundError if the task is not found', async () => {
+    const user = { id: 'u1' } as User
+
+    jest.spyOn(service, 'findOne').mockRejectedValue(new NotFoundException())
+
+    try {
+      await service.remove('bad', user)
+      fail('Must have throw NotFoundException')
+    } catch (error: any) {
+      expect(taskRepository.remove).not.toHaveBeenCalled()
+      expect(error).toBeInstanceOf(NotFoundException)
+    }
+  })
+
+  //  TODO: update() unit tests
 })
