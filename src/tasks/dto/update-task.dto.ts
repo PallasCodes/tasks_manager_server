@@ -19,4 +19,10 @@ export class UpdateTaskDto extends PartialType(CreateTaskDto) {
   @IsPositive()
   @IsOptional()
   order?: number
+
+  @ApiProperty({ nullable: true })
+  @IsInt()
+  @IsPositive()
+  @IsOptional()
+  estimatedTime?: number
 }
