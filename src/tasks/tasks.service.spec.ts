@@ -5,6 +5,10 @@ import { Repository } from 'typeorm'
 import { ListsService } from '../lists/lists.service'
 import { Task } from './entities/task.entity'
 import { TasksService } from './tasks.service'
+import { List } from 'src/lists/entities/list.entity'
+import { User } from 'src/auth/entities/user.entity'
+import { CreateTaskDto } from './dto/create-task.dto'
+import { NotFoundException } from '@nestjs/common'
 
 describe('TasksService', () => {
   let service: TasksService
@@ -18,7 +22,8 @@ describe('TasksService', () => {
       find: jest.fn(),
       countBy: jest.fn(),
       merge: jest.fn(),
-      remove: jest.fn()
+      remove: jest.fn(),
+      create: jest.fn()
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -44,5 +49,123 @@ describe('TasksService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined()
+  })
+
+  it('findAll() should fetch all products from the given user', async () => {
+    const user = { id: 'user-1' } as User
+    const repoResult = [{ id: 't1' }] as Task[]
+
+    const spy = jest.spyOn(taskRepository, 'find').mockResolvedValue(repoResult)
+
+    const result = await service.findAll(user)
+
+    expect(spy).toHaveBeenCalledWith({
+      where: { list: { user: { id: user.id } } },
+      order: { createdAt: 'DESC' }
+    })
+    expect(result).toEqual(repoResult)
+  })
+
+  it('findAll() should fetch all PINNED products from the given user', async () => {
+    const user = { id: 'user-1' } as User
+    const repoResult = [{ id: 't1' }] as Task[]
+
+    const spy = jest.spyOn(taskRepository, 'find').mockResolvedValue(repoResult)
+
+    const result = await service.findAll(user, true)
+
+    expect(spy).toHaveBeenCalledWith({
+      where: { list: { user: { id: user.id } }, pinned: true },
+      order: { createdAt: 'DESC' }
+    })
+    expect(result).toEqual(repoResult)
+  })
+
+  it('create() should create a task with order = count + 1 and without listId in the payload', async () => {
+    const user = { id: 'user-1' } as User
+    const list = { id: 'l1', user } as List
+
+    const dto: CreateTaskDto = {
+      listId: list.id,
+      pinned: false,
+      title: 'new task'
+    }
+
+    jest.spyOn(listService, 'findOne').mockResolvedValue(list)
+    jest.spyOn(taskRepository, 'count').mockResolvedValue(3) // 3 tasks in DB
+    const saveSpy = jest
+      .spyOn(taskRepository, 'save')
+      .mockImplementation(
+        async (payload: any) => ({ id: 't1', ...payload }) as Task
+      )
+
+    const result = await service.create(dto, user)
+
+    // Correct interactions
+    expect(listService.findOne).toHaveBeenCalledWith(list.id, user)
+    expect(taskRepository.count).toHaveBeenCalledWith({
+      where: { list: { id: list.id }, done: false }
+    })
+
+    // Creation payload must not include listId
+    expect(saveSpy).toHaveBeenCalledWith(
+      expect.not.objectContaining({ listId: expect.anything() })
+    )
+
+    // Must include list and order = count + 1
+    expect(saveSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'new task',
+        pinned: false,
+        list,
+        order: 4
+      })
+    )
+
+    // Correct result
+    expect(result).toEqual(
+      expect.objectContaining({ id: 't1', title: 'new task', list, order: 4 })
+    )
+  })
+
+  it('create() should respect pinned = true from the DTO', async () => {
+    const user = { id: 'u1' } as User
+    const list = { id: 'l1', user } as List
+
+    const dto: CreateTaskDto = {
+      listId: list.id,
+      pinned: true,
+      title: 'new task'
+    }
+
+    jest.spyOn(listService, 'findOne').mockResolvedValue(list)
+    jest.spyOn(taskRepository, 'count').mockResolvedValue(0)
+    jest.spyOn(taskRepository, 'save').mockResolvedValue({
+      id: 't1',
+      title: 'X',
+      pinned: true,
+      list,
+      order: 1
+    } as Task)
+
+    const result = await service.create(dto, user)
+
+    expect(result.pinned).toBe(true)
+    expect(result.order).toBe(1)
+  })
+
+  it('create() should throw a NotFoundException if the list does not exist', async () => {
+    const user = { id: 'u1' } as User
+
+    jest
+      .spyOn(listService, 'findOne')
+      .mockRejectedValue(new NotFoundException())
+
+    await expect(
+      service.create({ listId: 'bad', title: 'X', pinned: false }, user)
+    ).rejects.toBeInstanceOf(NotFoundException)
+
+    expect(taskRepository.count).not.toHaveBeenCalled()
+    expect(taskRepository.save).not.toHaveBeenCalled()
   })
 })
