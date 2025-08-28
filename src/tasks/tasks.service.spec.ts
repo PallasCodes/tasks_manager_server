@@ -235,12 +235,14 @@ describe('TasksService', () => {
     const user = { id: 'u1' } as User
     const task = { id: 't1' } as Task
 
-    jest.spyOn(service, 'findOne').mockResolvedValue(task)
+    const saveSpy = jest.spyOn(service, 'findOne')
+    saveSpy.mockResolvedValue(task)
     jest.spyOn(taskRepository, 'remove').mockResolvedValue(task)
 
     const result = await service.remove(task.id, user)
 
     expect(result).toEqual(task)
+    expect(saveSpy).toHaveBeenCalledWith(task.id, user)
   })
 
   it('remove() should throw a NotFoundError if the task is not found', async () => {
