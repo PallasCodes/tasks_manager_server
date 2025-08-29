@@ -82,6 +82,8 @@ export class TasksService {
           t.order -= 1
         }
 
+        // TODO: fix re ordering and refac code to make it more readable
+
         await this.taskRepository.save(tasksToUpdate)
       } else {
         const tasksToUpdate = await this.taskRepository.find({

@@ -1,12 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { NotFoundException } from '@nestjs/common'
+import { Between, Repository } from 'typeorm'
 
+import { User } from '../auth/entities/user.entity'
+import { CreateListDto } from './dto/create-list.dto'
 import { List } from './entities/list.entity'
 import { ListsService } from './lists.service'
-import { User } from 'src/auth/entities/user.entity'
-import { CreateListDto } from './dto/create-list.dto'
-import { NotFoundException } from '@nestjs/common'
+import { UpdateListDto } from './dto/update-list.dto'
 
 describe('ListsService', () => {
   let service: ListsService
@@ -111,5 +112,95 @@ describe('ListsService', () => {
 
     expect(result).toEqual(list)
     expect(saveSpy).toHaveBeenCalledWith(list.id, user)
+  })
+
+  it('update() should update list without reordering tasks', async () => {
+    const user = { id: 'u1' } as User
+    const list = { id: 'l1', title: 'task 1' } as List
+    const dto = { title: 'title updated' } as UpdateListDto
+
+    jest.spyOn(service, 'findOne').mockResolvedValue(list)
+    jest
+      .spyOn(listRepository, 'save')
+      .mockResolvedValue({ id: 'l1', title: 'title updated' } as List)
+    jest
+      .spyOn(listRepository, 'merge')
+      .mockReturnValue({ id: 'l1', title: 'title updated' } as List)
+
+    const result = await service.update(list.id, dto, user)
+
+    expect(result).toEqual({ id: 'l1', title: 'title updated' })
+  })
+
+  it('update() should throw a NotFoundException is list is not found', async () => {
+    const user = { id: 'u1' } as User
+    const dto = { title: 'title updated' } as UpdateListDto
+
+    jest.spyOn(service, 'findOne').mockRejectedValue(new NotFoundException())
+    const saveSpy = jest.spyOn(listRepository, 'save')
+
+    await expect(service.update('bad', dto, user)).rejects.toBeInstanceOf(
+      NotFoundException
+    )
+    expect(saveSpy).not.toHaveBeenCalled()
+  })
+
+  it('update() should not update the order if originalOrder and newOrder are equal', async () => {
+    const user = { id: 'u1' } as User
+    const list = { id: 'l1', order: 1 } as List
+    const dto = { order: 1 } as UpdateListDto
+
+    jest.spyOn(service, 'findOne').mockResolvedValue(list)
+    const findSpy = jest.spyOn(listRepository, 'find')
+
+    await service.update(list.id, dto, user)
+
+    expect(findSpy).not.toHaveBeenCalled()
+  })
+
+  it('update() should update other tasks order if new order is bigger', async () => {
+    const user = { id: 'u1' } as User
+    const list = { id: 'l1', order: 1 } as List
+    const lists = [{ order: 0 }, { order: 2 }] as List[]
+    const dto = { order: 2 } as UpdateListDto
+
+    jest.spyOn(listRepository, 'find').mockResolvedValue(lists)
+    jest.spyOn(service, 'findOne').mockResolvedValue(list)
+    const findSpy = jest.spyOn(listRepository, 'find')
+    const saveSpy = jest.spyOn(listRepository, 'save')
+
+    await service.update(list.id, dto, user)
+
+    expect(findSpy).toHaveBeenCalledWith({
+      where: {
+        user: { id: user.id },
+        order: Between(1 + 1, 2)
+      }
+    })
+    // expect(saveSpy).toHaveBeenNthCalledWith(1, [{ order: 0 }, { order: 1 }])
+    expect(saveSpy).toHaveBeenLastCalledWith({ id: 'l1', order: 2 })
+  })
+
+  it('update() should update other tasks order if new order is smaller', async () => {
+    const user = { id: 'u1' } as User
+    const list = { id: 'l1', order: 1 } as List
+    const lists = [{ order: 0 }, { order: 2 }] as List[]
+    const dto = { order: 0 } as UpdateListDto
+
+    jest.spyOn(listRepository, 'find').mockResolvedValue(lists)
+    jest.spyOn(service, 'findOne').mockResolvedValue(list)
+    const findSpy = jest.spyOn(listRepository, 'find')
+    const saveSpy = jest.spyOn(listRepository, 'save')
+
+    await service.update(list.id, dto, user)
+
+    expect(findSpy).toHaveBeenCalledWith({
+      where: {
+        user: { id: user.id },
+        order: Between(0, 1 - 1)
+      }
+    })
+    // expect(saveSpy).toHaveBeenNthCalledWith(1, [{ order: 0 }, { order: 1 }])
+    expect(saveSpy).toHaveBeenLastCalledWith({ id: 'l1', order: 0 })
   })
 })

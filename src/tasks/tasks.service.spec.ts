@@ -1,7 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Between, Repository } from 'typeorm'
 
 import { User } from '../auth/entities/user.entity'
 import { List } from '../lists/entities/list.entity'
@@ -9,6 +9,7 @@ import { ListsService } from '../lists/lists.service'
 import { CreateTaskDto } from './dto/create-task.dto'
 import { Task } from './entities/task.entity'
 import { TasksService } from './tasks.service'
+import { UpdateTaskDto } from './dto/update-task.dto'
 
 describe('TasksService', () => {
   let service: TasksService
@@ -260,4 +261,124 @@ describe('TasksService', () => {
   })
 
   //  TODO: update() unit tests
+  it('update() should update a task witout a new order or a new list', async () => {
+    const user = { id: 'u1' } as User
+    const dto = {
+      title: 'updated title'
+    } as UpdateTaskDto
+    const taskId = 't1'
+    const task = { ...dto, id: taskId }
+
+    const spyFindOne = jest.spyOn(service, 'findOne')
+    spyFindOne.mockResolvedValue(task as Task)
+
+    const spyMerge = jest.spyOn(taskRepository, 'merge')
+    jest.spyOn(taskRepository, 'save').mockResolvedValue(task as Task)
+
+    const result = await service.update(taskId, dto, user)
+
+    expect(spyFindOne).toHaveBeenCalledWith(taskId, user, true)
+    expect(result).toEqual(task)
+    expect(spyMerge).toHaveBeenCalledWith(task, dto)
+  })
+
+  it('update() should update the list if listId is given', async () => {
+    const user = { id: 'u1' } as User
+    const dto = {
+      listId: 'l2'
+    } as UpdateTaskDto
+    const taskId = 't1'
+    const task = { ...dto, id: taskId, list: { id: 'l1' } }
+
+    jest.spyOn(service, 'findOne').mockResolvedValue(task as Task)
+
+    const countBySpy = jest.spyOn(taskRepository, 'countBy')
+    countBySpy.mockResolvedValue(3) // 3 tasks in DB
+    jest
+      .spyOn(taskRepository, 'save')
+      .mockImplementation(async (payload: any) => payload)
+
+    const result = await service.update(taskId, dto, user)
+
+    expect(countBySpy).toHaveBeenCalledWith({
+      list: { id: dto.listId },
+      done: false
+    })
+    expect(result).toEqual({ ...task, order: 4 })
+  })
+
+  it('update() should not update the order if it does not change', async () => {
+    const user = { id: 'u1' } as User
+    const dto = {
+      order: 1
+    } as UpdateTaskDto
+    const task = { list: { id: 'l2' }, order: 1 } as Task
+
+    jest.spyOn(service, 'findOne').mockResolvedValue(task)
+    jest.spyOn(taskRepository, 'save').mockResolvedValue(task)
+    const findSpy = jest.spyOn(taskRepository, 'find')
+
+    await service.update('t1', dto, user)
+
+    expect(findSpy).not.toHaveBeenCalled()
+  })
+
+  it('update() should update the task and other tasks order if newOrder is bigger', async () => {
+    const user = { id: 'u1' } as User
+    const dto = {
+      order: 2
+    } as UpdateTaskDto
+    const task = { list: { id: 'l2' }, order: 1 } as Task
+    const tasksToUpdate = [{ order: 0 }, { order: 2 }] as Task[]
+
+    jest.spyOn(service, 'findOne').mockResolvedValue(task)
+
+    const findSpy = jest.spyOn(taskRepository, 'find')
+    findSpy.mockResolvedValue(tasksToUpdate)
+
+    const saveSpy = jest.spyOn(taskRepository, 'save')
+    saveSpy.mockResolvedValue(task)
+
+    const result = await service.update('t1', dto, user)
+
+    expect(findSpy).toHaveBeenCalledTimes(1)
+    expect(findSpy).toHaveBeenCalledWith({
+      where: {
+        list: { id: task.list.id },
+        order: Between(1 + 1, 2)
+      }
+    })
+    expect(saveSpy).toHaveBeenCalledTimes(2)
+    // expect(saveSpy).toHaveBeenLastCalledWith([{}])
+    expect(result.order).toBe(dto.order)
+  })
+
+  it('update() should update the task and other tasks order if newOrder is smaller', async () => {
+    const user = { id: 'u1' } as User
+    const dto = {
+      order: 1
+    } as UpdateTaskDto
+    const task = { list: { id: 'l2' }, order: 2 } as Task
+    const tasksToUpdate = [{ order: 0 }, { order: 1 }] as Task[]
+
+    jest.spyOn(service, 'findOne').mockResolvedValue(task)
+
+    const findSpy = jest.spyOn(taskRepository, 'find')
+    findSpy.mockResolvedValue(tasksToUpdate)
+
+    const saveSpy = jest.spyOn(taskRepository, 'save')
+    saveSpy.mockResolvedValue(task)
+
+    const result = await service.update('t1', dto, user)
+
+    expect(findSpy).toHaveBeenCalledTimes(1)
+    expect(findSpy).toHaveBeenCalledWith({
+      where: {
+        list: { id: task.list.id },
+        order: Between(1, 2 - 1)
+      }
+    })
+    expect(saveSpy).toHaveBeenCalledTimes(2)
+    expect(result.order).toBe(dto.order)
+  })
 })
