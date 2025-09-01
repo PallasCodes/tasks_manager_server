@@ -12,7 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
 import { Repository } from 'typeorm'
 
-import { sendEmail } from 'src/utils/send-email.util'
+import { sendEmail } from '../utils/send-email.util'
 import { List } from '../lists/entities/list.entity'
 import { CreateUserDto, LoginUserDto, RequestPasswordRestoreDto } from './dto'
 import { RestorePasswordDto } from './dto/restore-password.dto'
@@ -57,10 +57,7 @@ export class AuthService {
     }
   }
 
-  private async changePassword(
-    email: string,
-    newPassword: string
-  ): Promise<void> {
+  async changePassword(email: string, newPassword: string): Promise<void> {
     const user = await this.userRepository.findOneBy({ email })
 
     if (!user) {
