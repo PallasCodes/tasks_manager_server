@@ -16,11 +16,13 @@ export class ListsService {
 
   async create(createListDto: CreateListDto, user: User) {
     const order = await this.listRepository.countBy({ user: { id: user.id } })
-    return this.listRepository.save({
+    const list = await this.listRepository.save({
       ...createListDto,
       user,
       order: order + 1
     })
+
+    return { ...list, user: user.id }
   }
 
   findAll(user: User) {

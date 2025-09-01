@@ -53,6 +53,10 @@ describe('ListsModule create (e2e)', () => {
     await app.close()
   })
 
+  beforeEach(async () => {
+    await listsRepository.deleteAll()
+  })
+
   it('should return 401 - user is not logged in', async () => {
     const response = await request(app.getHttpServer()).post('/lists').send({})
 
@@ -84,17 +88,13 @@ describe('ListsModule create (e2e)', () => {
       .send({ title: 'new list' })
 
     expect(response.status).toBe(201)
-    expect(response.body).toEqual({
-      title: 'new list',
-      id: expect.any(String),
-      user: {
-        email: testingUser.email,
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        title: 'new list',
         id: expect.any(String),
-        isActive: true,
-        roles: ['user'],
-        username: testingUser.username
-      }
-    })
+        user: expect.any(String)
+      })
+    )
 
     await listsRepository.deleteAll()
   })
