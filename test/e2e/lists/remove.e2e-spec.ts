@@ -69,7 +69,8 @@ describe('ListsModule remove (e2e)', () => {
   it('should return a 404 error - not found', async () => {
     const list = await listsRepository.save({
       title: 'new list',
-      user: { id: loggedUserId }
+      user: { id: loggedUserId },
+      order: 0
     })
 
     const response = await request(app.getHttpServer())
@@ -88,7 +89,8 @@ describe('ListsModule remove (e2e)', () => {
   it('should found an delete a lists created by the logged user', async () => {
     const list = await listsRepository.save({
       title: 'new list',
-      user: { id: loggedUserId }
+      user: { id: loggedUserId },
+      order: 0
     })
 
     const response = await request(app.getHttpServer())

@@ -69,7 +69,8 @@ describe('ListsModule findOne (e2e)', () => {
   it('should return a 404 error', async () => {
     const list = await listsRepository.save({
       title: 'new list',
-      user: { id: loggedUserId }
+      user: { id: loggedUserId },
+      order: 0
     })
 
     const response = await request(app.getHttpServer())
@@ -87,7 +88,8 @@ describe('ListsModule findOne (e2e)', () => {
   it('should found and return a list created by the logged user', async () => {
     const list = await listsRepository.save({
       title: 'new list',
-      user: { id: loggedUserId }
+      user: { id: loggedUserId },
+      order: 0
     })
 
     const response = await request(app.getHttpServer())
@@ -95,6 +97,12 @@ describe('ListsModule findOne (e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
 
     expect(response.status).toBe(200)
-    expect(response.body).toEqual({ id: expect.any(String), title: list.title })
+    expect(response.body).toEqual({
+      id: expect.any(String),
+      title: list.title,
+      order: 0,
+      createdAt: expect.any(String),
+      updatedAt: expect.any(String)
+    })
   })
 })

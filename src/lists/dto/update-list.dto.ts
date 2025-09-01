@@ -14,7 +14,7 @@ export class UpdateListDto {
   @MinLength(1)
   @MaxLength(100)
   @IsOptional()
-  title: string
+  title?: string
 
   @ApiProperty()
   @IsOptional()
