@@ -57,7 +57,7 @@ describe('ListsModule findAll (e2e)', () => {
 
     token = responseUser.body.token
     userId = responseUser.body.user.id
-    userId2 = responseUser2.body.id
+    userId2 = responseUser2.body.user.id
   })
 
   beforeEach(async () => {
@@ -65,8 +65,8 @@ describe('ListsModule findAll (e2e)', () => {
   })
 
   afterAll(async () => {
-    await userRepository.delete({ email: testingUser.email })
     await listsRepository.deleteAll()
+    await userRepository.deleteAll()
     await app.close()
   })
 
@@ -77,12 +77,22 @@ describe('ListsModule findAll (e2e)', () => {
   })
 
   it('should return only the lists created by the logged in user', async () => {
-    const user1 = await userRepository.findOneBy({ id: userId })
-    const list1 = await listsRepository.save({ title: 'list1', user: user1 })
-    const list2 = await listsRepository.save({ title: 'list2', user: user1 })
+    const list1 = await listsRepository.save({
+      title: 'list1',
+      user: { id: userId },
+      order: 0
+    })
+    const list2 = await listsRepository.save({
+      title: 'list2',
+      user: { id: userId },
+      order: 1
+    })
 
-    const user2 = await userRepository.findOneBy({ id: userId2 })
-    await listsRepository.save({ title: 'list3', user: user2 })
+    await listsRepository.save({
+      title: 'list 3',
+      user: { id: userId2 },
+      order: 0
+    })
 
     const response = await request(app.getHttpServer())
       .get('/lists')
@@ -91,9 +101,20 @@ describe('ListsModule findAll (e2e)', () => {
     expect(response.status).toBe(200)
     expect(response.body.length).toBe(2)
     expect(response.body).toEqual([
-      { id: list1.id, title: list1.title, user: list1.user.id },
-      { id: list2.id, title: list2.title, user: list2.user.id }
+      {
+        ...list1,
+        tasks: [],
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+        user: userId
+      },
+      {
+        ...list2,
+        tasks: [],
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+        user: userId
+      }
     ])
-    console.log('🚀 ~ it ~ response.body:', response.body)
   })
 })
